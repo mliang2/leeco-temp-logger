@@ -16,7 +16,17 @@ class TempLogger:
     poll_interval = 60
     flush_interval = 300
 
-    max_log_size = 1024*1024*2
+    if poll_interval < 3:
+        print("ERROR: poll interval must be at least 3")
+        sys.exit(1)
+
+    if (flush_interval / poll_interval) < 2:
+        print ("ERROR: flush interval must be at least twice poll_interval")
+        sys.exit(1)
+
+    # 1KB holds about 20 lines/minutes of data
+    # 24hr requires ~72KB
+    max_log_size = 1024*512 # 7 days of data
     if os.path.isfile(self.log) and os.stat(self.log).st_size > max_log_size:
         if os.path.isfile(f'{self.log}.1'):
             os.rename(f'{self.log}.1', f'{self.log}.2')
