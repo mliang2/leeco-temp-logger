@@ -3,11 +3,12 @@
 import os
 import signal
 import sys
+from datetime import datetime
 from time import sleep
 from time import time
 
 class TempLogger:
-    def __init__(self):
+    def __init__(self, debug=False):
         self.unflushed_data = ''
         self.now = int(time())
         self.last_flush = self.now
@@ -24,13 +25,17 @@ class TempLogger:
             print ("ERROR: flush interval must be at least twice poll_interval")
             sys.exit(1)
 
-        # 1KB holds about 20 lines/minutes of data
-        # 24hr requires ~72KB
-        max_log_size = 1024*512 # 7 days of data
+        # 1KB holds about 14 lines/minutes of data
+        # 24hr requires ~103KB
+        max_log_size = 1024*1024
         if os.path.isfile(self.log) and os.stat(self.log).st_size > max_log_size:
             if os.path.isfile(f'{self.log}.1'):
                 os.rename(f'{self.log}.1', f'{self.log}.2')
                 os.rename(self.log, f'{self.log}.1')
+
+        # for per CPU core utilization
+        self.current_cpu_stat = None
+        self.last_cpu_stat = None
 
         signal.signal(signal.SIGINT, self.flush)
         signal.signal(signal.SIGTERM, self.flush)
@@ -45,12 +50,15 @@ class TempLogger:
             '''
 
             self.now = int(time())
+            now_ui = datetime.utcfromtimestamp(self.now).strftime('%y-%m-%d_%H:%M:%S')
             temperatures = ','.join(map(str,thermals.values()))
             load1 = self.read_loadavg(0)
-            line = f'{self.now},{temperatures},{load1}'
+            cpu_util = ','.join(map(str,self.read_cpu_util()))
+            line = f'{now_ui},{temperatures},{load1},{cpu_util}'
             self.unflushed_data += f"\n{line}"
 
-            #print(line)
+            if debug:
+                print(line)
 
             if self.now - self.last_flush >= flush_interval:
                 self.flush()
@@ -66,6 +74,43 @@ class TempLogger:
         with open("/proc/loadavg") as fh:
             ret = float(fh.read().split(' ')[field])
         return ret
+
+    def read_cpu_util(self):
+        with open('/proc/stat') as fh:
+            self.current_cpu_stat = []
+            for line in fh:
+                if line.startswith('cpu') and not line.startswith('cpu '):
+                #if line.startswith('cpu '):
+                    fields = [int(column) for column in line.strip().split()[1:]]
+                    total = sum(fields)
+                    idle = fields[3]
+                    self.current_cpu_stat.append([total, idle])
+
+        # print(self.current_cpu_stat)
+        output = []
+        if self.last_cpu_stat is None:
+            # first one, fill w/ dummy data
+            for i in range(0, len(self.current_cpu_stat)):
+                output.append(0)
+        else:
+            for i in range(0, len(self.current_cpu_stat)):
+                total = self.current_cpu_stat[i][0]
+                idle = self.current_cpu_stat[i][1]
+
+                last_total = self.last_cpu_stat[i][0]
+                last_idle = self.last_cpu_stat[i][1]
+
+                idle_delta = idle - last_idle
+                total_delta = total - last_total
+                used_delta = total_delta - idle_delta
+
+                utilization = int(100 * used_delta / total_delta)
+                output.append(utilization)
+
+        self.last_cpu_stat = self.current_cpu_stat
+
+        return output
+
 
     def read_thermal(self):
         # https://github.com/Kuchar09/openpilot/blob/master/selfdrive/thermald.py#L209-L215
@@ -91,28 +136,31 @@ class TempLogger:
             sys.exit()
 
 if __name__ == '__main__':
-    try:
-        pid = os.fork()
-        if pid > 0:
-            sys.exit(0)
-    except OSError as e:
-        print("fork #1 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
-        sys.exit(1)
+    if len(sys.argv) > 1 and sys.argv[1] == '-f':
+        TempLogger(debug=True)
+    else:
+        try:
+            pid = os.fork()
+            if pid > 0:
+                sys.exit(0)
+        except OSError as e:
+            print("fork #1 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
+            sys.exit(1)
 
-    # Decouple from parent environment
-    os.chdir("/")
-    os.setsid()
-    os.umask(0)
-    # Do second fork
-    try:
-        pid = os.fork()
-        if pid > 0:
-            # Exit from second parent; print eventual PID before exiting
-            print("Daemon PID %d" % pid)
-            sys.exit(0)
-    except OSError as e:
-        print("fork #1 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
-        sys.exit(1)
+        # Decouple from parent environment
+        os.chdir("/")
+        os.setsid()
+        os.umask(0o022)
+        # Do second fork
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # Exit from second parent; print eventual PID before exiting
+                print("Daemon PID %d" % pid)
+                sys.exit(0)
+        except OSError as e:
+            print("fork #1 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
+            sys.exit(1)
 
-    # start main loop
-    TempLogger()
+        # start main loop
+        TempLogger()
