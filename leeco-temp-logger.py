@@ -76,6 +76,18 @@ class TempLogger:
         return ret
 
     def read_cpu_util(self):
+        '''
+        Tracking format:
+        [
+          [ cpu0_total, cpu0_idle],
+          [ cpu1_total, cpu1_idle],
+          ...
+        ]
+
+        Return format:
+        [ cpu0_util, cpu1_util, ...]
+        '''
+
         with open('/proc/stat') as fh:
             self.current_cpu_stat = []
             for line in fh:
@@ -136,6 +148,7 @@ class TempLogger:
             sys.exit()
 
 if __name__ == '__main__':
+    # foreground mode
     if len(sys.argv) > 1 and sys.argv[1] == '-f':
         TempLogger(debug=True)
     else:
@@ -151,6 +164,7 @@ if __name__ == '__main__':
         os.chdir("/")
         os.setsid()
         os.umask(0o022)
+
         # Do second fork
         try:
             pid = os.fork()
