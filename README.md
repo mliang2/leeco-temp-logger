@@ -11,7 +11,7 @@ Usage:
 1. ssh into the comma two:
     ```
     cd /data/data/com.termux/files/home/
-    chmod 755 /data/data/com.termux/files/home/
+    chmod 755 /data/data/com.termux/files/home/leeco-temp-logger.py
 
     # Verify script can run in foreground mode.
     /data/data/com.termux/files/home/leeco-temp-logger.py -f
