@@ -10,7 +10,6 @@ Usage:
 1. scp `leeco-temp-logger.py` to `/data/data/com.termux/files/home/`
 1. ssh into the comma two:
     ```
-    cd /data/data/com.termux/files/home/
     chmod 755 /data/data/com.termux/files/home/leeco-temp-logger.py
 
     # Verify script can run in foreground mode.
