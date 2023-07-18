@@ -12,6 +12,12 @@ Usage:
     ```
     cd /data/data/com.termux/files/home/
     chmod 755 /data/data/com.termux/files/home/
+
+    # Verify script can run in foreground mode.
+    /data/data/com.termux/files/home/leeco-temp-logger.py -f
+
+    # make sure command above runs and you see a new line very minute. Press control+c to stop
+    # Do NOT proceed to next steps if script fails for whatever reason!
     ```
 1. Start the logger script on comma two startup. ssh into the comma two:
     ```
