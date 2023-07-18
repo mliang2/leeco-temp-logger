@@ -25,8 +25,8 @@ class TempLogger:
             print ("ERROR: flush interval must be at least twice poll_interval")
             sys.exit(1)
 
-        # 1KB holds about 14 lines/minutes of data
-        # 24hr requires ~103KB
+        # 1KB holds about 13 lines/minutes of data
+        # 24hr requires ~110KB
         max_log_size = 1024*1024
         if os.path.isfile(self.log) and os.stat(self.log).st_size > max_log_size:
             if os.path.isfile(f'{self.log}.1'):
@@ -39,6 +39,9 @@ class TempLogger:
 
         signal.signal(signal.SIGINT, self.flush)
         signal.signal(signal.SIGTERM, self.flush)
+
+        self.csv_header="time,cpu0_t,cpu1_t,cpu2_t,cpu3_t,mem_t,gpu_t,bat_t,ambient_t,pmic_t,load1,cpu0_%,cpu1_%,cpu2_%,cpu3_%,gpu_%,screen_brightness"
+        self.write_csv_header = False
 
         while 1:
             thermals = self.read_thermal()
@@ -159,7 +162,14 @@ class TempLogger:
             return 0
 
     def flush(self, signum=None, frame=None):
+        if not os.path.isfile(self.log):
+            self.write_csv_header = True
+
         with open(self.log, 'a') as f:
+            if self.write_csv_header:
+                f.write(f'{self.csv_header}\n')
+                self.write_csv_header = False
+
             f.write(self.unflushed_data)
 
         #print('flush done')
