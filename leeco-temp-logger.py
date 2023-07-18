@@ -12,7 +12,7 @@ class TempLogger:
         self.unflushed_data = ''
         self.now = int(time())
         self.last_flush = self.now
-        self.log = '/data/data/com.termux/files/home/leeco-temp.log'
+        self.log = '/data/data/com.termux/files/home/leeco-temp.csv'
 
         poll_interval = 60
         flush_interval = 300
