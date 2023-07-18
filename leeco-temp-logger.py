@@ -130,8 +130,8 @@ class TempLogger:
 
 
     def read_thermal(self):
-        # https://github.com/Kuchar09/openpilot/blob/master/selfdrive/thermald.py#L209-L215
-        # https://github.com/commaai/openpilot/blob/commatwo_master/selfdrive/hardware/eon/hardware.py#L382-L383
+        # https://github.com/commaai/openpilot/blob/2476ea213c24dac16531c8798761e34f96e0ded2/selfdrive/thermald/thermald.py#L52C1-L62
+        # https://github.com/commaai/openpilot/blob/842ba8e5e6253d17d82a02d3d9994efbbbf2133e/selfdrive/hardware/eon/hardware.py#L382-L383
         dat = {}
         dat['cpu0'] = self.read_tz(5) / 10.
         dat['cpu1'] = self.read_tz(7) / 10.
@@ -144,7 +144,7 @@ class TempLogger:
         dat['pmic'] = self.read_tz(22) / 1000
         return dat
 
-    # https://github.com/commaai/openpilot/blob/commatwo_master/selfdrive/hardware/eon/hardware.py#L399-L405
+    # https://github.com/commaai/openpilot/blob/842ba8e5e6253d17d82a02d3d9994efbbbf2133e/selfdrive/hardware/eon/hardware.py#L399-L405
     def get_gpu_usage_percent(self):
         try:
             used, total = open('/sys/devices/soc/b00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/gpubusy').read().strip().split()
@@ -153,7 +153,7 @@ class TempLogger:
         except Exception:
             return 0
 
-    # https://github.com/commaai/openpilot/blob/commatwo_master/selfdrive/hardware/eon/hardware.py#L389-L394
+    # https://github.com/commaai/openpilot/blob/842ba8e5e6253d17d82a02d3d9994efbbbf2133e/selfdrive/hardware/eon/hardware.py#L389-L394
     def get_screen_brightness(self):
         try:
             with open("/sys/class/leds/lcd-backlight/brightness") as f:
