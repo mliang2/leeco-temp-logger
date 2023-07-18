@@ -54,7 +54,9 @@ class TempLogger:
             temperatures = ','.join(map(str,thermals.values()))
             load1 = self.read_loadavg(0)
             cpu_util = ','.join(map(str,self.read_cpu_util()))
-            line = f'{now_ui},{temperatures},{load1},{cpu_util}'
+            gpu_util = self.get_gpu_usage_percent()
+            screen_brightness = self.get_screen_brightness()
+            line = f'{now_ui},{temperatures},{load1},{cpu_util},{gpu_util},{screen_brightness}'
             self.unflushed_data += f"\n{line}"
 
             if debug:
@@ -126,6 +128,7 @@ class TempLogger:
 
     def read_thermal(self):
         # https://github.com/Kuchar09/openpilot/blob/master/selfdrive/thermald.py#L209-L215
+        # https://github.com/commaai/openpilot/blob/commatwo_master/selfdrive/hardware/eon/hardware.py#L382-L383
         dat = {}
         dat['cpu0'] = self.read_tz(5) / 10.
         dat['cpu1'] = self.read_tz(7) / 10.
@@ -134,7 +137,26 @@ class TempLogger:
         dat['mem'] = self.read_tz(2) / 10.
         dat['gpu'] = self.read_tz(16) / 10.
         dat['bat'] = self.read_tz(29) / 1000
+        dat['ambient'] = self.read_tz(25) / 1
+        dat['pmic'] = self.read_tz(22) / 1000
         return dat
+
+    # https://github.com/commaai/openpilot/blob/commatwo_master/selfdrive/hardware/eon/hardware.py#L399-L405
+    def get_gpu_usage_percent(self):
+        try:
+            used, total = open('/sys/devices/soc/b00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+            perc = 100.0 * int(used) / int(total)
+            return min(max(perc, 0), 100)
+        except Exception:
+            return 0
+
+    # https://github.com/commaai/openpilot/blob/commatwo_master/selfdrive/hardware/eon/hardware.py#L389-L394
+    def get_screen_brightness(self):
+        try:
+            with open("/sys/class/leds/lcd-backlight/brightness") as f:
+                return int(float(f.read()) / 2.55)
+        except Exception:
+            return 0
 
     def flush(self, signum=None, frame=None):
         with open(self.log, 'a') as f:
