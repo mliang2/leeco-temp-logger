@@ -31,7 +31,8 @@ class TempLogger:
         if os.path.isfile(self.log) and os.stat(self.log).st_size > max_log_size:
             if os.path.isfile(f'{self.log}.1'):
                 os.rename(f'{self.log}.1', f'{self.log}.2')
-                os.rename(self.log, f'{self.log}.1')
+
+            os.rename(self.log, f'{self.log}.1')
 
         # for per CPU core utilization
         self.current_cpu_stat = None
