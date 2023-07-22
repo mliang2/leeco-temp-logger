@@ -54,7 +54,7 @@ class TempLogger:
             '''
 
             self.now = int(time())
-            now_ui = datetime.fromtimestamp(self.now).strftime('%y-%m-%d_%H:%M:%S')
+            now_ui = datetime.fromtimestamp(self.now).strftime('%y-%m-%d %H:%M:%S')
             temperatures = ','.join(map(str,thermals.values()))
             load1 = self.read_loadavg(0)
             cpu_util = ','.join(map(str,self.read_cpu_util()))
