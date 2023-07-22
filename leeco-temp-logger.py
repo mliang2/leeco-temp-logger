@@ -78,7 +78,7 @@ class TempLogger:
 
     def read_loadavg(self, field):
         with open("/proc/loadavg") as fh:
-            ret = round(float(fh.read().split(' ')[field]), 2)
+            ret = float(fh.read().split(' ')[field])
         return ret
 
     def read_cpu_util(self):
