@@ -54,7 +54,7 @@ class TempLogger:
             '''
 
             self.now = int(time())
-            now_ui = datetime.utcfromtimestamp(self.now).strftime('%y-%m-%d_%H:%M:%S')
+            now_ui = datetime.fromtimestamp(self.now).strftime('%y-%m-%d_%H:%M:%S')
             temperatures = ','.join(map(str,thermals.values()))
             load1 = self.read_loadavg(0)
             cpu_util = ','.join(map(str,self.read_cpu_util()))
@@ -78,7 +78,7 @@ class TempLogger:
 
     def read_loadavg(self, field):
         with open("/proc/loadavg") as fh:
-            ret = float(fh.read().split(' ')[field])
+            ret = round(float(fh.read().split(' ')[field]), 2)
         return ret
 
     def read_cpu_util(self):
@@ -134,22 +134,22 @@ class TempLogger:
         # https://github.com/commaai/openpilot/blob/2476ea213c24dac16531c8798761e34f96e0ded2/selfdrive/thermald/thermald.py#L52C1-L62
         # https://github.com/commaai/openpilot/blob/842ba8e5e6253d17d82a02d3d9994efbbbf2133e/selfdrive/hardware/eon/hardware.py#L382-L383
         dat = {}
-        dat['cpu0'] = self.read_tz(5) / 10.
-        dat['cpu1'] = self.read_tz(7) / 10.
-        dat['cpu2'] = self.read_tz(10) / 10.
-        dat['cpu3'] = self.read_tz(12) / 10.
-        dat['mem'] = self.read_tz(2) / 10.
-        dat['gpu'] = self.read_tz(16) / 10.
-        dat['bat'] = self.read_tz(29) / 1000
-        dat['ambient'] = self.read_tz(25) / 1
-        dat['pmic'] = self.read_tz(22) / 1000
+        dat['cpu0'] = round(self.read_tz(5) / 10, 1)
+        dat['cpu1'] = round(self.read_tz(7) / 10, 1)
+        dat['cpu2'] = round(self.read_tz(10) / 10, 1)
+        dat['cpu3'] = round(self.read_tz(12) / 10, 1)
+        dat['mem'] = round(self.read_tz(2) / 10, 1)
+        dat['gpu'] = round(self.read_tz(16) / 10, 1)
+        dat['bat'] = round(self.read_tz(29) / 1000, 1)
+        dat['ambient'] = round(self.read_tz(25) / 1, 1)
+        dat['pmic'] = round(self.read_tz(22) / 1000, 1)
         return dat
 
     # https://github.com/commaai/openpilot/blob/842ba8e5e6253d17d82a02d3d9994efbbbf2133e/selfdrive/hardware/eon/hardware.py#L399-L405
     def get_gpu_usage_percent(self):
         try:
             used, total = open('/sys/devices/soc/b00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/gpubusy').read().strip().split()
-            perc = 100.0 * int(used) / int(total)
+            perc = int(100.0 * int(used) / int(total))
             return min(max(perc, 0), 100)
         except Exception:
             return 0
