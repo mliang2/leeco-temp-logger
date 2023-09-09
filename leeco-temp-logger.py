@@ -14,14 +14,14 @@ class TempLogger:
         self.last_flush = self.now
         self.log = '/data/data/com.termux/files/home/leeco-temp.csv'
 
-        poll_interval = 60
-        flush_interval = 300
+        self.poll_interval = 60
+        self.flush_interval = 300
 
-        if poll_interval < 3:
+        if self.poll_interval < 3:
             print("ERROR: poll interval must be at least 3")
             sys.exit(1)
 
-        if (flush_interval / poll_interval) < 2:
+        if (self.flush_interval / self.poll_interval) < 2:
             print ("ERROR: flush interval must be at least twice poll_interval")
             sys.exit(1)
 
@@ -66,10 +66,10 @@ class TempLogger:
             if debug:
                 print(line)
 
-            if self.now - self.last_flush >= flush_interval:
+            if self.now - self.last_flush >= self.flush_interval:
                 self.flush()
 
-            sleep(poll_interval)
+            sleep(self.poll_interval)
 
     def read_tz(self, x):
         with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
