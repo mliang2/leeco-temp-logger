@@ -6,6 +6,9 @@ Requirements:
 
 WARNING: No support/warranty of any kind.  Use at your own risk!
 
+Setting Time Zone:
+1. ssh to c2 and run `setprop persist.sys.timezone "America/Los_Angeles"`
+
 Usage:
 1. If you DON'T want `leeco-temp-logger.py` to copy the csv, set `self.copy_csv_script = False`
 1. If you want script to auto scp the temp data to your local server when connected to wifi:
