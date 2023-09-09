@@ -2,6 +2,7 @@
 
 import os
 import signal
+import subprocess
 import sys
 from datetime import datetime
 from time import sleep
@@ -13,9 +14,14 @@ class TempLogger:
         self.now = int(time())
         self.last_flush = self.now
         self.log = '/data/data/com.termux/files/home/leeco-temp.csv'
-
         self.poll_interval = 60
-        self.flush_interval = 300
+        self.flush_interval_default = 300
+        self.flush_interval = self.flush_interval_default
+
+        self.copy_csv_script = '/data/data/com.termux/files/home/copy-csv.sh' # set to False to disable auto copying CSV to local server
+        self.timeout_bin = '/data/data/com.termux/files/usr/bin/timeout'
+        self.wifi_connected = False
+        self.wifi_network_str = '192.168.3.'    # seeing this string in wifi IP address means connected to wifi
 
         if self.poll_interval < 3:
             print("ERROR: poll interval must be at least 3")
@@ -66,8 +72,24 @@ class TempLogger:
             if debug:
                 print(line)
 
+            if self.copy_csv_script:
+                self.get_wifi_status()
+                if self.wifi_connected:
+                    self.flush_interval = int(self.poll_interval / 2)
+                else:
+                    self.flush_interval = self.flush_interval_default
+
             if self.now - self.last_flush >= self.flush_interval:
                 self.flush()
+
+            if self.wifi_connected:
+                if debug:
+                    print("Running copy csv script")
+
+                self.copy_csv()
+
+                if debug:
+                    print("Done running copy csv script")
 
             sleep(self.poll_interval)
 
@@ -161,6 +183,19 @@ class TempLogger:
                 return int(float(f.read()) / 2.55)
         except Exception:
             return 0
+
+    def get_wifi_status(self):
+        with open ('/proc/net/fib_trie') as fh:
+            if self.wifi_network_str in fh.read():
+                self.wifi_connected = True
+            else:
+                self.wifi_connected = False
+
+    def copy_csv(self):
+        try:
+            subprocess.Popen([self.timeout_bin, '-k', str(int(self.poll_interval / 2) + 5), str(int(self.poll_interval / 2)), self.copy_csv_script])
+        except Exception as e:
+            print(e)
 
     def flush(self, signum=None, frame=None):
         if not os.path.isfile(self.log):
