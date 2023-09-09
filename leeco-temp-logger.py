@@ -193,7 +193,7 @@ class TempLogger:
 
     def copy_csv(self):
         try:
-            subprocess.Popen([self.timeout_bin, '-k', str(int(self.poll_interval / 2) + 5), str(int(self.poll_interval / 2)), self.copy_csv_script])
+            subprocess.Popen([self.timeout_bin, '-k', '15', str(int(self.poll_interval / 2)), self.copy_csv_script])
         except Exception as e:
             print(e)
 
