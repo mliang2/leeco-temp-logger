@@ -21,7 +21,7 @@ class TempLogger:
         self.copy_csv_script = '/data/data/com.termux/files/home/copy-csv.sh' # set to False to disable auto copying CSV to local server
         self.timeout_bin = '/data/data/com.termux/files/usr/bin/timeout'
         self.wifi_connected = False
-        self.wifi_network_str = '192.168.3.'    # seeing this string in wifi IP address means connected to wifi
+        self.wifi_network_str = '192.168.'      # seeing this string in wifi IP address means connected to wifi
 
         if self.poll_interval < 3:
             print("ERROR: poll interval must be at least 3")
@@ -72,12 +72,21 @@ class TempLogger:
             if debug:
                 print(line)
 
+            time_slept = 0
             if self.copy_csv_script:
-                self.get_wifi_status()
-                if self.wifi_connected:
-                    self.flush_interval = int(self.poll_interval / 2)
-                else:
-                    self.flush_interval = self.flush_interval_default
+                self.flush_interval = self.flush_interval_default
+                self.wifi_connected = False
+                retry_time = 5
+                max_count = self.poll_interval // retry_time
+                count = 0
+                while not self.wifi_connected and count < max_count:
+                    self.get_wifi_status()
+                    if self.wifi_connected:
+                        self.flush_interval = retry_time
+                    else:
+                        sleep(retry_time)
+                        time_slept += retry_time
+                        count += 1
 
             if self.now - self.last_flush >= self.flush_interval:
                 self.flush()
@@ -91,7 +100,7 @@ class TempLogger:
                 if debug:
                     print("Done running copy csv script")
 
-            sleep(self.poll_interval)
+            sleep(self.poll_interval - time_slept)
 
     def read_tz(self, x):
         with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
