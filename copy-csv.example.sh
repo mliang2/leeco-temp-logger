@@ -13,10 +13,13 @@ if [ -f $csv ]; then
     # play a sound when csv is uploaded. See README.md for instructions
     if [ $scp_rc -eq 0 ]; then
         play-audio $ok_sound
+        exit 0
     else
         play-audio $error_sound
+        exit 1
     fi
 else
     echo "leeco-temp.csv not found"
     play-audio $error_sound
+    exit 1
 fi
