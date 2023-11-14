@@ -19,6 +19,8 @@ class TempLogger:
         self.flush_interval = self.flush_interval_default
 
         self.copy_csv_script = '/data/data/com.termux/files/home/copy-csv.sh' # set to False to disable auto copying CSV to local server
+        self.copy_csv_interval = 1800   # how often to copy csv when connected to wifi, in sec.
+        self.last_csv_copy = 0
         self.timeout_bin = '/data/data/com.termux/files/usr/bin/timeout'
         self.wifi_connected = False
         self.wifi_network_str = '192.168.'      # seeing this string in wifi IP address means connected to wifi
@@ -75,13 +77,17 @@ class TempLogger:
             time_slept = 0
             if self.copy_csv_script:
                 self.flush_interval = self.flush_interval_default
+
+                # poll to check if connected to wifi on each loop
+                # add in the time used by the poll loop into the main wait loop
+                # EG: main loop: 60s, if used 10 sec in wifi poll loop, sleep 50 sec instead of 60
                 self.wifi_connected = False
                 retry_time = 5
                 max_count = self.poll_interval // retry_time
                 count = 0
                 while not self.wifi_connected and count < max_count:
                     self.get_wifi_status()
-                    if self.wifi_connected:
+                    if self.wifi_connected and self.need_to_copy_csv():
                         self.flush_interval = retry_time
                     else:
                         sleep(retry_time)
@@ -91,7 +97,7 @@ class TempLogger:
             if self.now - self.last_flush >= self.flush_interval:
                 self.flush()
 
-            if self.wifi_connected:
+            if self.wifi_connected and self.need_to_copy_csv():
                 if debug:
                     print("Running copy csv script")
 
@@ -202,9 +208,18 @@ class TempLogger:
 
     def copy_csv(self):
         try:
-            subprocess.Popen([self.timeout_bin, '-k', '15', str(int(self.poll_interval / 2)), self.copy_csv_script])
+            proc = subprocess.Popen([self.timeout_bin, '-k', '15', str(int(self.poll_interval / 2)), self.copy_csv_script])
+            proc.wait()
+            if proc.returncode == 0:
+                self.last_csv_copy = self.now
         except Exception as e:
             print(e)
+
+    def need_to_copy_csv(self):
+        if self.now - self.last_csv_copy > self.copy_csv_interval:
+            return True
+        else:
+            return False
 
     def flush(self, signum=None, frame=None):
         if not os.path.isfile(self.log):
