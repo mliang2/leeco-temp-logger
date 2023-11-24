@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import os
-import signal
 import subprocess
 import sys
 from datetime import datetime
@@ -46,8 +45,10 @@ class TempLogger:
         self.current_cpu_stat = None
         self.last_cpu_stat = None
 
-        signal.signal(signal.SIGINT, self.flush)
-        signal.signal(signal.SIGTERM, self.flush)
+        # disabled since Android isn't sending any signals to processes on shutdown/reboot
+        # import signal
+        # signal.signal(signal.SIGINT, self.flush)
+        # signal.signal(signal.SIGTERM, self.flush)
 
         self.csv_header="time,cpu0_t,cpu1_t,cpu2_t,cpu3_t,mem_t,gpu_t,bat_t,ambient_t,pmic_t,load1,cpu0_%,cpu1_%,cpu2_%,cpu3_%,gpu_%,screen_brightness"
         self.write_csv_header = False
